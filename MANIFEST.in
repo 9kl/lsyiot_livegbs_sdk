@@ -1,0 +1,12 @@
+include README.md
+include LICENSE
+include requirements.txt
+include STREAM_API_SUMMARY.md
+include OSD_API_SUMMARY.md
+include CONTROL_API_SUMMARY.md
+include REFACTOR_SUMMARY.md
+recursive-include lsyiot_livegbs_sdk *.py
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude test_*
+global-exclude example_*

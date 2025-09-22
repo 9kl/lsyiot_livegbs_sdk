@@ -14,8 +14,8 @@ LiveGBS GB28181国标流媒体服务Python SDK
     login_result = client.login('username', 'password')
     print(f"登录成功，URLToken: {login_result.url_token}")
 
-作者: lsyiot
-版本: 1.0.0
+作者: fhp
+版本: 1.0.1
 """
 
 from .api import LiveGBSAPI
@@ -37,8 +37,8 @@ from .responses import (
 )
 from .exceptions import LiveGBSError, LiveGBSNetworkError, LiveGBSAPIError, LiveGBSParseError
 
-__version__ = "1.0.0"
-__author__ = "lsyiot"
+__version__ = "1.0.1"
+__author__ = "fhp"
 __all__ = [
     "LiveGBSAPI",
     "LoginResponse",
