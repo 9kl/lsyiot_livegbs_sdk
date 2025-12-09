@@ -460,18 +460,6 @@ pytest tests/ -v --cov=lsyiot_livegbs_sdk
 - 🛡️ 完善的错误处理和类型提示
 - 📊 经过实际设备验证
 
-## 📞 支持
+## 📞 问题反馈
 
-如果您在使用过程中遇到问题，请通过以下方式获取帮助：
-
-- 🐛 [提交 Issue](https://github.com/your-repo/lsyiot_livegbs_sdk/issues)
-- 📧 发送邮件到: your-email@example.com
-- 📖 查看[详细文档](https://your-docs-site.com)
-
----
-
-## ⭐ Star History
-
-如果这个项目对您有帮助，请不要忘记给它一个 ⭐！
-
-[![Star History Chart](https://api.star-history.com/svg?repos=your-repo/lsyiot_livegbs_sdk&type=Date)](https://star-history.com/#your-repo/lsyiot_livegbs_sdk&Date)
+如果您在使用过程中遇到问题，请通过 [GitHub Issues](https://github.com/9kl/lsyiot_livegbs_sdk/issues) 提交反馈。

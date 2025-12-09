@@ -20,9 +20,13 @@ class LiveGBSError(Exception):
         self.message = message
 
     def __str__(self):
+        parts = []
         if self.error_code:
-            return f"[{self.error_code}] {self.message}"
-        return self.message
+            parts.append(f"[{self.error_code}]")
+        parts.append(self.message)
+        if self.response_text:
+            parts.append(f"(响应: {self.response_text})")
+        return " ".join(parts)
 
 
 class LiveGBSNetworkError(LiveGBSError):

@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-12-09
+
+### Improved
+- 优化 `LiveGBSError` 异常类的 `__str__` 方法，现在会包含 `response_text` 响应信息
+  - 便于调试时查看完整的错误上下文
+  - 输出格式：`[错误码] 错误消息 (响应: 响应内容)`
+
 ## [1.0.2] - 2025-12-09
 
 ### Fixed
@@ -56,7 +63,8 @@
 - 类型提示支持
 - 响应对象封装
 
-[Unreleased]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/9kl/lsyiot_livegbs_sdk/releases/tag/v1.0.0
