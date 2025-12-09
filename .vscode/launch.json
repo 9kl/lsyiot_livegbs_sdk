@@ -6,7 +6,7 @@
       "name": "Python Debugger: Run _test.py",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/_test.py",
+      "program": "${workspaceFolder}/tests/test1.py",
       "console": "integratedTerminal",
       "justMyCode": true
     }

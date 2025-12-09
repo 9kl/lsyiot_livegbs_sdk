@@ -330,7 +330,7 @@ class LiveGBSAPI:
         if cdn is not None:
             data["cdn"] = cdn
         if streamnumber is not None:
-            data["streamnumber"] = streamnumber
+            data["streamnumber"] = str(streamnumber)
         if timeout is not None:
             data["timeout"] = timeout
 

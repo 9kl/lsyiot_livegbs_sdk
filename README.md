@@ -415,13 +415,6 @@ def robust_api_call(func, *args, max_retries=3, **kwargs):
 device_list = robust_api_call(client.get_device_list)
 ```
 
-## 🔗 相关文档
-
-- [API实现总结](./STREAM_API_SUMMARY.md) - 直播流API详细说明
-- [视频水印功能](./OSD_API_SUMMARY.md) - 视频水印API详细说明  
-- [设备控制功能](./CONTROL_API_SUMMARY.md) - 设备控制API详细说明
-- [代码重构说明](./REFACTOR_SUMMARY.md) - 代码结构优化记录
-
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
@@ -429,7 +422,7 @@ device_list = robust_api_call(client.get_device_list)
 ### 开发环境设置
 ```bash
 # 克隆项目
-git clone https://github.com/your-repo/lsyiot_livegbs_sdk.git
+git clone https://github.com/9kl/lsyiot_livegbs_sdk.git
 cd lsyiot_livegbs_sdk
 
 # 创建虚拟环境
@@ -438,8 +431,7 @@ source .venv/bin/activate  # Linux/Mac
 # 或
 .venv\Scripts\activate  # Windows
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装开发依赖
 pip install -e .
 ```
 
