@@ -31,6 +31,13 @@ from .responses import (
     FIControlResponse,
     PresetControlResponse,
     HomePositionControlResponse,
+    RecordListResponse,
+    PlaybackStartResponse,
+    PlaybackStopResponse,
+    PlaybackControlResponse,
+    PlaybackStream,
+    PlaybackStreamListResponse,
+    PlaybackStreamInfoResponse,
 )
 
 
@@ -620,3 +627,244 @@ class LiveGBSAPI:
         response = self._make_request("POST", "/api/v1/control/homeposition", json=data)
         response_data = self._handle_flexible_response(response, "看守位控制")
         return HomePositionControlResponse(response_data)
+
+    def get_record_list(
+        self,
+        serial: str,
+        starttime: str,
+        channel: Optional[int] = None,
+        code: Optional[str] = None,
+        endtime: Optional[str] = None,
+        type: str = "all",
+        center: str = "config",
+        indistinct: str = "config",
+        streamnumber: Optional[int] = None,
+        timeout: int = 15,
+    ) -> RecordListResponse:
+        """
+        查询录像列表
+        :param serial: 设备编号
+        :param starttime: 开始时间, YYYY-MM-DDTHH:mm:ss
+        :param channel: 通道序号，默认1
+        :param code: 通道编号，通过 /api/v1/device/channellist 获取的 ChannelList.ID，该参数和 channel 二选一传递即可
+        :param endtime: 结束时间, YYYY-MM-DDTHH:mm:ss，默认当前时间
+        :param type: 录像类型, time-定时录像, alarm-报警录像, manual-手动录像, all-所有，默认all
+        :param center: 是否进行中心历史记录检索，默认 config 表示读取设备开关配置，允许值: true, false, config
+        :param indistinct: 是否模糊查询，默认 config 表示读取设备开关配置，允许值: true, false, config
+        :param streamnumber: 码流编号, 0 - 主码流, 1 - 子码流; 以此类推
+        :param timeout: 超时时间(秒)，默认15
+        :return: 录像列表响应对象
+        """
+        # 验证录像类型
+        valid_types = ["time", "alarm", "manual", "all"]
+        if type not in valid_types:
+            raise ValueError(f"无效的录像类型: {type}，允许的值: {', '.join(valid_types)}")
+
+        # 验证 center 和 indistinct 参数
+        valid_bool_config = ["true", "false", "config"]
+        if center not in valid_bool_config:
+            raise ValueError(f"无效的 center 参数: {center}，允许的值: {', '.join(valid_bool_config)}")
+        if indistinct not in valid_bool_config:
+            raise ValueError(f"无效的 indistinct 参数: {indistinct}，允许的值: {', '.join(valid_bool_config)}")
+
+        # 准备查询参数
+        params: Dict[str, Any] = {
+            "serial": serial,
+            "starttime": starttime,
+            "type": type,
+            "center": center,
+            "indistinct": indistinct,
+            "timeout": timeout,
+        }
+        self._add_channel_param(params, channel, code)
+
+        if endtime is not None:
+            params["endtime"] = endtime
+        if streamnumber is not None:
+            params["streamnumber"] = str(streamnumber)
+
+        # 发送请求
+        response = self._make_request("GET", "/api/v1/playback/recordlist", params=params)
+        response_data = self._handle_response(response)
+
+        # 返回录像列表响应对象
+        return RecordListResponse(response_data)
+
+    def start_playback(
+        self,
+        serial: str,
+        starttime: str,
+        channel: Optional[int] = None,
+        code: Optional[str] = None,
+        endtime: Optional[str] = None,
+        download: bool = False,
+        download_speed: int = 4,
+        sms_id: Optional[str] = None,
+        sms_group_id: Optional[str] = None,
+        cdn: Optional[str] = None,
+        audio: str = "config",
+        transport: str = "config",
+        transport_mode: str = "passive",
+        streamnumber: Optional[int] = None,
+        timezone: str = "Asia/Shanghai",
+        timeout: Optional[int] = None,
+    ) -> PlaybackStartResponse:
+        """
+        开始回放/下载
+        注意: 回放流多路不复用, 为避免设备过载, 应及时调用 stop_playback 停止回放
+
+        :param serial: 设备编号
+        :param starttime: 开始时间, YYYY-MM-DDTHH:mm:ss
+        :param channel: 通道序号，默认1
+        :param code: 通道编号，通过 /api/v1/device/channellist 获取的 ChannelList.ID，该参数和 channel 二选一传递即可
+        :param endtime: 结束时间, YYYY-MM-DDTHH:mm:ss，默认当前时间
+        :param download: 下载标识，通过 /api/v1/playback/streaminfo 查询下载进度，默认false
+        :param download_speed: 下载倍速，仅当 download=true 时有效，默认4
+        :param sms_id: 指定SMS，默认取设备配置
+        :param sms_group_id: 指定SMS分组，默认取设备配置
+        :param cdn: 转推 CDN 地址，形如: [rtmp|rtsp]://xxx，需要encodeURIComponent
+        :param audio: 是否开启音频，默认 config 表示读取通道音频开关配置，允许值: true, false, config
+        :param transport: 流传输模式，默认 config 表示读取设备流传输模式配置，允许值: TCP, UDP, config
+        :param transport_mode: 当 transport=TCP 时有效，指示流传输主被动模式，默认被动，允许值: active, passive
+        :param streamnumber: 码流编号，0 - 主码流，1 - 子码流；以此类推
+        :param timezone: 时区，默认使用 Asia/Shanghai
+        :param timeout: 拉流超时(秒)，默认使用 livecms.ini > sip > ack_timeout
+        :return: 开始回放响应对象
+        """
+        # 准备请求数据
+        data: Dict[str, Any] = {
+            "serial": serial,
+            "starttime": starttime,
+            "download": download,
+            "download_speed": download_speed,
+            "audio": audio,
+            "transport": transport,
+            "transport_mode": transport_mode,
+            "timezone": timezone,
+        }
+        self._add_channel_param(data, channel, code)
+
+        # 添加可选参数
+        if endtime is not None:
+            data["endtime"] = endtime
+        if sms_id is not None:
+            data["sms_id"] = sms_id
+        if sms_group_id is not None:
+            data["sms_group_id"] = sms_group_id
+        if cdn is not None:
+            data["cdn"] = cdn
+        if streamnumber is not None:
+            data["streamnumber"] = str(streamnumber)
+        if timeout is not None:
+            data["timeout"] = timeout
+
+        # 发送请求
+        response = self._make_request("POST", "/api/v1/playback/start", json=data)
+        response_data = self._handle_response(response)
+
+        # 返回开始回放响应对象
+        return PlaybackStartResponse(response_data)
+
+    def stop_playback(self, streamid: str) -> PlaybackStopResponse:
+        """
+        停止回放
+        :param streamid: 回放流ID，由开始回放接口(start_playback)返回
+        :return: 停止回放响应对象
+        """
+        data: Dict[str, Any] = {"streamid": streamid}
+
+        response = self._make_request("POST", "/api/v1/playback/stop", json=data)
+        response_data = self._handle_flexible_response(response, "停止回放")
+        return PlaybackStopResponse(response_data)
+
+    def control_playback(
+        self,
+        streamid: str,
+        command: str,
+        range: str = "now",
+        scale: float = 2.0,
+    ) -> PlaybackControlResponse:
+        """
+        回放控制
+        :param streamid: 回放流ID，由开始回放接口(start_playback)返回
+        :param command: 回放控制类型，允许值: play, pause, teardown, scale
+        :param range: command=play 时有效，表示从当前位置跳转到指定 range(单位s)的时间点播放；
+                      range=now 表示从当前位置开始播放（如暂停后恢复播放），默认 now
+        :param scale: command=scale 时有效，倍数播放倍率，
+                      1=正常播放，0<scale<1 为慢放，>1 为快放，负数为倒放，默认 2
+        :return: 回放控制响应对象
+        """
+        # 验证控制指令
+        valid_commands = ["play", "pause", "teardown", "scale"]
+        if command not in valid_commands:
+            raise ValueError(f"无效的控制指令: {command}，允许的值: {', '.join(valid_commands)}")
+
+        data: Dict[str, Any] = {
+            "streamid": streamid,
+            "cmd": command,
+        }
+
+        # 根据 command 添加相应参数
+        if command == "play":
+            data["range"] = range
+        elif command == "scale":
+            data["scale"] = scale
+
+        response = self._make_request("POST", "/api/v1/playback/control", json=data)
+        response_data = self._handle_flexible_response(response, "回放控制")
+        return PlaybackControlResponse(response_data)
+
+    def get_playback_stream_list(
+        self,
+        start: int = 0,
+        limit: int = 100,
+        q: Optional[str] = None,
+        serial: Optional[str] = None,
+        code: Optional[str] = None,
+        sms: Optional[str] = None,
+        acodec: Optional[str] = None,
+        vcodec: Optional[str] = None,
+    ) -> PlaybackStreamListResponse:
+        """
+        查询回放流列表
+        :param start: 分页游标开始(不是页码)，从零开始，默认0
+        :param limit: 分页大小，0 不分页，默认100
+        :param q: 搜索关键字
+        :param serial: 设备编号
+        :param code: 通道编号
+        :param sms: 流媒体编号
+        :param acodec: 音频编码: pcm_alaw, pcm_mulaw, aac...
+        :param vcodec: 视频编码: h264, hevc, mpeg2video...
+        :return: 回放流列表响应对象
+        """
+        params: Dict[str, Any] = {"start": start, "limit": limit}
+
+        if q is not None:
+            params["q"] = q
+        if serial is not None:
+            params["serial"] = serial
+        if code is not None:
+            params["code"] = code
+        if sms is not None:
+            params["sms"] = sms
+        if acodec is not None:
+            params["acodec"] = acodec
+        if vcodec is not None:
+            params["vcodec"] = vcodec
+
+        response = self._make_request("GET", "/api/v1/playback/streamlist", params=params)
+        response_data = self._handle_response(response)
+        return PlaybackStreamListResponse(response_data)
+
+    def get_playback_stream_info(self, stream_id: str) -> PlaybackStreamInfoResponse:
+        """
+        获取单条回放流信息
+        可用于查询回放/下载进度
+
+        :param stream_id: 回放流ID，由开始回放接口(start_playback)返回
+        :return: 回放流信息响应对象
+        """
+        params = {"streamid": stream_id}
+        response = self._make_request("GET", "/api/v1/playback/streaminfo", params=params)
+        response_data = self._handle_response(response)
+        return PlaybackStreamInfoResponse(response_data)

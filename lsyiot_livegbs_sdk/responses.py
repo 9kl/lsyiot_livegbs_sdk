@@ -608,3 +608,465 @@ class HomePositionControlResponse:
             "success": self.success,
             "message": self.message,
         }
+
+
+class RecordItem:
+    """录像记录数据类"""
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        初始化录像记录
+        :param data: 录像数据
+        """
+        self.device_id: str = data.get("DeviceID", "")
+        self.name: str = data.get("Name", "")
+        self.file_path: Optional[str] = data.get("FilePath")
+        self.file_size: Optional[int] = data.get("FileSize")
+        self.address: Optional[str] = data.get("Address")
+        self.start_time: str = data.get("StartTime", "")
+        self.end_time: str = data.get("EndTime", "")
+        self.secrecy: int = data.get("Secrecy", 0)
+        self.type: Optional[str] = data.get("Type")
+        self.recorder_id: Optional[str] = data.get("RecorderID")
+        self.record_location: Optional[str] = data.get("RecordLocation")
+        self.stream_number: Optional[int] = data.get("StreamNumber")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        result = {
+            "DeviceID": self.device_id,
+            "Name": self.name,
+            "StartTime": self.start_time,
+            "EndTime": self.end_time,
+            "Secrecy": self.secrecy,
+        }
+        if self.file_path is not None:
+            result["FilePath"] = self.file_path
+        if self.file_size is not None:
+            result["FileSize"] = self.file_size
+        if self.address is not None:
+            result["Address"] = self.address
+        if self.type is not None:
+            result["Type"] = self.type
+        if self.recorder_id is not None:
+            result["RecorderID"] = self.recorder_id
+        if self.record_location is not None:
+            result["RecordLocation"] = self.record_location
+        if self.stream_number is not None:
+            result["StreamNumber"] = self.stream_number
+        return result
+
+
+class RecordListResponse:
+    """录像列表响应数据类"""
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        初始化录像列表响应
+        :param data: 接口返回的数据
+        """
+        self.device_id: str = data.get("DeviceID", "")
+        self.name: str = data.get("Name", "")
+        self.sum_num: int = data.get("SumNum", 0)
+        self.record_list: List[RecordItem] = [RecordItem(record_data) for record_data in data.get("RecordList", [])]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        return {
+            "DeviceID": self.device_id,
+            "Name": self.name,
+            "SumNum": self.sum_num,
+            "RecordList": [record.to_dict() for record in self.record_list],
+        }
+
+
+class PlaybackStartResponse:
+    """开始回放/下载响应数据类"""
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        初始化开始回放响应
+        :param data: 接口返回的数据
+        """
+        # 基本流信息
+        self.stream_id: str = data.get("StreamID", "")
+        self.sms_id: str = data.get("SMSID", "")
+        self.device_id: str = data.get("DeviceID", "")
+        self.channel_id: str = data.get("ChannelID", "")
+        self.channel_name: str = data.get("ChannelName", "")
+
+        # 播放地址
+        self.webrtc: str = data.get("WEBRTC", "")
+        self.flv: str = data.get("FLV", "")
+        self.ws_flv: str = data.get("WS_FLV", "")
+        self.rtmp: str = data.get("RTMP", "")
+        self.hls: str = data.get("HLS", "")
+        self.rtsp: Optional[str] = data.get("RTSP")
+        self.cdn: Optional[str] = data.get("CDN")
+        self.snap_url: Optional[str] = data.get("SnapURL")
+
+        # 流传输信息
+        self.transport: str = data.get("Transport", "")
+        self.start_at: str = data.get("StartAt", "")
+        self.record_start_at: Optional[str] = data.get("RecordStartAt")
+        self.duration: int = data.get("Duration", 0)
+
+        # 视频编码信息
+        self.source_video_codec_name: str = data.get("SourceVideoCodecName", "")
+        self.source_video_width: int = data.get("SourceVideoWidth", 0)
+        self.source_video_height: int = data.get("SourceVideoHeight", 0)
+        self.source_video_frame_rate: float = data.get("SourceVideoFrameRate", 0.0)
+
+        # 音频编码信息
+        self.source_audio_codec_name: str = data.get("SourceAudioCodecName", "")
+        self.source_audio_sample_rate: int = data.get("SourceAudioSampleRate", 0)
+
+        # RTP统计
+        self.rtp_count: int = data.get("RTPCount", 0)
+        self.rtp_lost_count: int = data.get("RTPLostCount", 0)
+        self.rtp_lost_rate: float = data.get("RTPLostRate", 0.0)
+        self.video_frame_count: int = data.get("VideoFrameCount", 0)
+
+        # 开关状态
+        self.audio_enable: bool = data.get("AudioEnable", False)
+        self.ondemand: bool = data.get("Ondemand", False)
+        self.cloud_record: bool = data.get("CloudRecord", False)
+
+        # 流量统计
+        self.in_bytes: int = data.get("InBytes", 0)
+        self.in_bit_rate: int = data.get("InBitRate", 0)
+        self.out_bytes: int = data.get("OutBytes", 0)
+        self.num_outputs: int = data.get("NumOutputs", 0)
+        self.cascade_size: int = data.get("CascadeSize", 0)
+        self.decode_size: int = data.get("DecodeSize", 0)
+        self.relay_size: int = data.get("RelaySize", 0)
+
+        # 回放特有字段
+        self.playback_start_time: str = data.get("PlaybackStartTime", "")
+        self.playback_end_time: str = data.get("PlaybackEndTime", "")
+        self.playback_duration: int = data.get("PlaybackDuration", 0)
+        self.playback_speed: float = data.get("PlaybackSpeed", 1.0)
+        self.timestamp_sec: int = data.get("TimestampSec", 0)
+        self.playback_progress: float = data.get("PlaybackProgress", 0.0)
+        self.download_progress: float = data.get("DownloadProgress", 0.0)
+        self.playback_file_size: int = data.get("PlaybackFileSize", 0)
+        self.playback_file_url: str = data.get("PlaybackFileURL", "")
+        self.playback_paused: bool = data.get("PlaybackPaused", False)
+        self.playback_file_error: Optional[str] = data.get("PlaybackFileError")
+        self.channel_osd: Optional[str] = data.get("ChannelOSD")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        result = {
+            "StreamID": self.stream_id,
+            "SMSID": self.sms_id,
+            "DeviceID": self.device_id,
+            "ChannelID": self.channel_id,
+            "ChannelName": self.channel_name,
+            "WEBRTC": self.webrtc,
+            "FLV": self.flv,
+            "WS_FLV": self.ws_flv,
+            "RTMP": self.rtmp,
+            "HLS": self.hls,
+            "Transport": self.transport,
+            "StartAt": self.start_at,
+            "Duration": self.duration,
+            "SourceVideoCodecName": self.source_video_codec_name,
+            "SourceVideoWidth": self.source_video_width,
+            "SourceVideoHeight": self.source_video_height,
+            "SourceVideoFrameRate": self.source_video_frame_rate,
+            "SourceAudioCodecName": self.source_audio_codec_name,
+            "SourceAudioSampleRate": self.source_audio_sample_rate,
+            "RTPCount": self.rtp_count,
+            "RTPLostCount": self.rtp_lost_count,
+            "RTPLostRate": self.rtp_lost_rate,
+            "VideoFrameCount": self.video_frame_count,
+            "AudioEnable": self.audio_enable,
+            "Ondemand": self.ondemand,
+            "CloudRecord": self.cloud_record,
+            "InBytes": self.in_bytes,
+            "InBitRate": self.in_bit_rate,
+            "OutBytes": self.out_bytes,
+            "NumOutputs": self.num_outputs,
+            "CascadeSize": self.cascade_size,
+            "DecodeSize": self.decode_size,
+            "RelaySize": self.relay_size,
+            "PlaybackStartTime": self.playback_start_time,
+            "PlaybackEndTime": self.playback_end_time,
+            "PlaybackDuration": self.playback_duration,
+            "PlaybackSpeed": self.playback_speed,
+            "TimestampSec": self.timestamp_sec,
+            "PlaybackProgress": self.playback_progress,
+            "DownloadProgress": self.download_progress,
+            "PlaybackFileSize": self.playback_file_size,
+            "PlaybackFileURL": self.playback_file_url,
+            "PlaybackPaused": self.playback_paused,
+        }
+
+        # 添加可选字段
+        if self.rtsp:
+            result["RTSP"] = self.rtsp
+        if self.cdn:
+            result["CDN"] = self.cdn
+        if self.snap_url:
+            result["SnapURL"] = self.snap_url
+        if self.record_start_at:
+            result["RecordStartAt"] = self.record_start_at
+        if self.playback_file_error:
+            result["PlaybackFileError"] = self.playback_file_error
+        if self.channel_osd:
+            result["ChannelOSD"] = self.channel_osd
+
+        return result
+
+    @property
+    def video_resolution(self) -> str:
+        """获取视频分辨率字符串"""
+        return f"{self.source_video_width}x{self.source_video_height}"
+
+    @property
+    def is_downloading(self) -> bool:
+        """是否正在下载"""
+        return self.download_progress > 0 and self.download_progress < 1
+
+    @property
+    def is_completed(self) -> bool:
+        """回放/下载是否完成"""
+        return self.playback_progress >= 1 or self.download_progress >= 1
+
+
+class PlaybackStopResponse:
+    """停止回放响应数据类"""
+
+    def __init__(self, data):
+        """
+        初始化停止回放响应
+        :param data: 接口返回的数据，可能是字符串或字典
+        """
+        if isinstance(data, str):
+            self.success = True
+            self.message = data if data else "回放流停止成功"
+            self.playback_file_url: Optional[str] = None
+        elif isinstance(data, dict):
+            self.success = True
+            self.message = data.get("message", "回放流停止成功")
+            self.playback_file_url = data.get("PlaybackFileURL")
+        else:
+            self.success = True
+            self.message = "回放流停止成功"
+            self.playback_file_url = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        result = {
+            "success": self.success,
+            "message": self.message,
+        }
+        if self.playback_file_url:
+            result["PlaybackFileURL"] = self.playback_file_url
+        return result
+
+
+class PlaybackControlResponse:
+    """回放控制响应数据类"""
+
+    def __init__(self, data):
+        """
+        初始化回放控制响应
+        :param data: 接口返回的数据，可能是字符串或字典
+        """
+        if isinstance(data, str):
+            self.success = True
+            self.message = data if data else "回放控制成功"
+        elif isinstance(data, dict):
+            self.success = True
+            self.message = data.get("message", "回放控制成功")
+        else:
+            self.success = True
+            self.message = "回放控制成功"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        return {
+            "success": self.success,
+            "message": self.message,
+        }
+
+
+class PlaybackStream:
+    """回放流信息数据类"""
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        初始化回放流信息
+        :param data: 回放流数据
+        """
+        # 基本流信息
+        self.stream_id: str = data.get("StreamID", "")
+        self.sms_id: str = data.get("SMSID", "")
+        self.device_id: str = data.get("DeviceID", "")
+        self.channel_id: str = data.get("ChannelID", "")
+        self.channel_name: str = data.get("ChannelName", "")
+
+        # 播放地址
+        self.webrtc: str = data.get("WEBRTC", "")
+        self.flv: str = data.get("FLV", "")
+        self.ws_flv: str = data.get("WS_FLV", "")
+        self.rtmp: str = data.get("RTMP", "")
+        self.hls: str = data.get("HLS", "")
+        self.rtsp: Optional[str] = data.get("RTSP")
+        self.cdn: Optional[str] = data.get("CDN")
+        self.snap_url: Optional[str] = data.get("SnapURL")
+
+        # 流传输信息
+        self.transport: str = data.get("Transport", "")
+        self.start_at: str = data.get("StartAt", "")
+        self.record_start_at: Optional[str] = data.get("RecordStartAt")
+        self.duration: int = data.get("Duration", 0)
+
+        # 视频编码信息
+        self.source_video_codec_name: str = data.get("SourceVideoCodecName", "")
+        self.source_video_width: int = data.get("SourceVideoWidth", 0)
+        self.source_video_height: int = data.get("SourceVideoHeight", 0)
+        self.source_video_frame_rate: float = data.get("SourceVideoFrameRate", 0.0)
+
+        # 音频编码信息
+        self.source_audio_codec_name: str = data.get("SourceAudioCodecName", "")
+        self.source_audio_sample_rate: int = data.get("SourceAudioSampleRate", 0)
+
+        # RTP统计
+        self.rtp_count: int = data.get("RTPCount", 0)
+        self.rtp_lost_count: int = data.get("RTPLostCount", 0)
+        self.rtp_lost_rate: float = data.get("RTPLostRate", 0.0)
+        self.video_frame_count: int = data.get("VideoFrameCount", 0)
+
+        # 开关状态
+        self.audio_enable: bool = data.get("AudioEnable", False)
+        self.ondemand: bool = data.get("Ondemand", False)
+        self.cloud_record: bool = data.get("CloudRecord", False)
+
+        # 流量统计
+        self.in_bytes: int = data.get("InBytes", 0)
+        self.in_bit_rate: int = data.get("InBitRate", 0)
+        self.out_bytes: int = data.get("OutBytes", 0)
+        self.num_outputs: int = data.get("NumOutputs", 0)
+        self.cascade_size: int = data.get("CascadeSize", 0)
+        self.decode_size: int = data.get("DecodeSize", 0)
+        self.relay_size: int = data.get("RelaySize", 0)
+
+        # 回放特有字段
+        self.playback_start_time: str = data.get("PlaybackStartTime", "")
+        self.playback_end_time: str = data.get("PlaybackEndTime", "")
+        self.playback_duration: int = data.get("PlaybackDuration", 0)
+        self.playback_speed: float = data.get("PlaybackSpeed", 1.0)
+        self.timestamp_sec: int = data.get("TimestampSec", 0)
+        self.playback_progress: float = data.get("PlaybackProgress", 0.0)
+        self.download_progress: float = data.get("DownloadProgress", 0.0)
+        self.playback_file_size: int = data.get("PlaybackFileSize", 0)
+        self.playback_file_url: str = data.get("PlaybackFileURL", "")
+        self.playback_paused: bool = data.get("PlaybackPaused", False)
+        self.playback_file_error: Optional[str] = data.get("PlaybackFileError")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        result = {
+            "StreamID": self.stream_id,
+            "SMSID": self.sms_id,
+            "DeviceID": self.device_id,
+            "ChannelID": self.channel_id,
+            "ChannelName": self.channel_name,
+            "WEBRTC": self.webrtc,
+            "FLV": self.flv,
+            "WS_FLV": self.ws_flv,
+            "RTMP": self.rtmp,
+            "HLS": self.hls,
+            "Transport": self.transport,
+            "StartAt": self.start_at,
+            "Duration": self.duration,
+            "SourceVideoCodecName": self.source_video_codec_name,
+            "SourceVideoWidth": self.source_video_width,
+            "SourceVideoHeight": self.source_video_height,
+            "SourceVideoFrameRate": self.source_video_frame_rate,
+            "SourceAudioCodecName": self.source_audio_codec_name,
+            "SourceAudioSampleRate": self.source_audio_sample_rate,
+            "RTPCount": self.rtp_count,
+            "RTPLostCount": self.rtp_lost_count,
+            "RTPLostRate": self.rtp_lost_rate,
+            "VideoFrameCount": self.video_frame_count,
+            "AudioEnable": self.audio_enable,
+            "Ondemand": self.ondemand,
+            "CloudRecord": self.cloud_record,
+            "InBytes": self.in_bytes,
+            "InBitRate": self.in_bit_rate,
+            "OutBytes": self.out_bytes,
+            "NumOutputs": self.num_outputs,
+            "CascadeSize": self.cascade_size,
+            "DecodeSize": self.decode_size,
+            "RelaySize": self.relay_size,
+            "PlaybackStartTime": self.playback_start_time,
+            "PlaybackEndTime": self.playback_end_time,
+            "PlaybackDuration": self.playback_duration,
+            "PlaybackSpeed": self.playback_speed,
+            "TimestampSec": self.timestamp_sec,
+            "PlaybackProgress": self.playback_progress,
+            "DownloadProgress": self.download_progress,
+            "PlaybackFileSize": self.playback_file_size,
+            "PlaybackFileURL": self.playback_file_url,
+            "PlaybackPaused": self.playback_paused,
+        }
+
+        if self.rtsp:
+            result["RTSP"] = self.rtsp
+        if self.cdn:
+            result["CDN"] = self.cdn
+        if self.snap_url:
+            result["SnapURL"] = self.snap_url
+        if self.record_start_at:
+            result["RecordStartAt"] = self.record_start_at
+        if self.playback_file_error:
+            result["PlaybackFileError"] = self.playback_file_error
+
+        return result
+
+    @property
+    def video_resolution(self) -> str:
+        """获取视频分辨率字符串"""
+        return f"{self.source_video_width}x{self.source_video_height}"
+
+
+class PlaybackStreamListResponse:
+    """回放流列表响应数据类"""
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        初始化回放流列表响应
+        :param data: 接口返回的数据
+        """
+        self.playback_count: int = data.get("PlaybackCount", 0)
+        self.playbacks: List[PlaybackStream] = [
+            PlaybackStream(stream_data) for stream_data in data.get("Playbacks", [])
+        ]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        return {
+            "PlaybackCount": self.playback_count,
+            "Playbacks": [playback.to_dict() for playback in self.playbacks],
+        }
+
+
+class PlaybackStreamInfoResponse:
+    """单条回放流信息响应数据类"""
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        初始化单条回放流信息响应
+        :param data: 接口返回的数据
+        """
+        self.success: bool = True
+        self.message: str = ""
+        self.stream: PlaybackStream = PlaybackStream(data)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        return self.stream.to_dict()

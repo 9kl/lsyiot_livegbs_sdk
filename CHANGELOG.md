@@ -7,6 +7,32 @@
 
 ## [Unreleased]
 
+## [1.0.5] - 2025-12-10
+
+### Added
+- 新增录像回放相关API
+  - `get_record_list` - 查询设备录像列表
+  - `start_playback` - 开始录像回放/下载
+  - `stop_playback` - 停止录像回放
+  - `control_playback` - 回放控制（暂停/继续/倍速/跳转）
+  - `get_playback_stream_list` - 查询回放流列表
+  - `get_playback_stream_info` - 获取单条回放流信息（查询回放/下载进度）
+- 新增响应类
+  - `RecordItem` - 录像条目
+  - `RecordListResponse` - 录像列表响应
+  - `PlaybackStartResponse` - 开始回放响应
+  - `PlaybackStopResponse` - 停止回放响应
+  - `PlaybackControlResponse` - 回放控制响应
+  - `PlaybackStream` - 回放流信息
+  - `PlaybackStreamListResponse` - 回放流列表响应
+  - `PlaybackStreamInfoResponse` - 单条回放流信息响应
+
+### Fixed
+- 修复 `control_playback` 方法的请求参数名错误（`command` → `cmd`）
+
+### Improved
+- `PlaybackStream` 类添加 `webrtc` 字段支持 WEBRTC 播放地址
+
 ## [1.0.4] - 2025-12-10
 
 ### Added
