@@ -41,6 +41,18 @@ class LiveGBSAPIError(LiveGBSError):
     pass
 
 
+class LiveGBSOfflineError(LiveGBSError):
+    """设备不在线异常"""
+
+    pass
+
+
+class LiveGBSNotFoundError(LiveGBSError):
+    """设备未找到异常"""
+
+    pass
+
+
 class LiveGBSParseError(LiveGBSError):
     """数据解析异常"""
 

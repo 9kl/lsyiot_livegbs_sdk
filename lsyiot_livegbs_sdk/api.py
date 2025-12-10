@@ -9,7 +9,14 @@ from urllib.parse import urljoin
 
 import requests
 
-from .exceptions import LiveGBSError, LiveGBSNetworkError, LiveGBSAPIError, LiveGBSParseError
+from .exceptions import (
+    LiveGBSError,
+    LiveGBSNetworkError,
+    LiveGBSAPIError,
+    LiveGBSOfflineError,
+    LiveGBSNotFoundError,
+    LiveGBSParseError,
+)
 from .responses import (
     LoginResponse,
     ModifyPasswordResponse,
@@ -70,6 +77,20 @@ class LiveGBSAPI:
         try:
             # 检查HTTP状态码
             if response.status_code != 200:
+                # 先判断是否是设备不在线
+                if "offline" in response.text.lower():
+                    raise LiveGBSOfflineError(
+                        "设备不在线",
+                        error_code=str(response.status_code),
+                        response_text=response.text,
+                    )
+                # 判断是否是设备未找到
+                if "not found" in response.text.lower():
+                    raise LiveGBSNotFoundError(
+                        "设备未找到",
+                        error_code=str(response.status_code),
+                        response_text=response.text,
+                    )
                 raise LiveGBSAPIError(
                     f"API请求失败，状态码: {response.status_code}",
                     error_code=str(response.status_code),
@@ -97,6 +118,55 @@ class LiveGBSAPI:
         :return: MD5加密后的密码（32位长度，不带中划线，小写）
         """
         return hashlib.md5(password.encode("utf-8")).hexdigest().lower()
+
+    def _handle_flexible_response(self, response: requests.Response, operation_name: str) -> Any:
+        """
+        处理可能返回JSON或纯文本的响应
+        :param response: HTTP响应对象
+        :param operation_name: 操作名称，用于错误信息
+        :return: 响应数据（JSON对象或文本字符串）
+        """
+        try:
+            if response.status_code != 200:
+                if "offline" in response.text.lower():
+                    raise LiveGBSOfflineError(
+                        f"{operation_name}失败，设备不在线",
+                        error_code=str(response.status_code),
+                        response_text=response.text,
+                    )
+                if "not found" in response.text.lower():
+                    raise LiveGBSNotFoundError(
+                        f"{operation_name}失败，设备未找到",
+                        error_code=str(response.status_code),
+                        response_text=response.text,
+                    )
+                raise LiveGBSAPIError(
+                    f"{operation_name}失败，状态码: {response.status_code}",
+                    error_code=str(response.status_code),
+                    response_text=response.text,
+                )
+
+            try:
+                return response.json()
+            except json.JSONDecodeError:
+                return response.text
+
+        except LiveGBSError:
+            raise
+        except Exception as e:
+            raise LiveGBSError(f"{operation_name}时发生未知错误: {str(e)}", response_text=response.text)
+
+    @staticmethod
+    def _add_channel_param(data: Dict[str, Any], channel: Optional[int], code: Optional[str]) -> None:
+        """
+        添加通道相关参数
+        :param data: 请求数据字典
+        :param channel: 通道序号
+        :param code: 通道编号
+        """
+        data["channel"] = channel if channel is not None else 1
+        if code is not None:
+            data["code"] = code
 
     def login(
         self, username: str, password: str, url_token_only: bool = False, token_timeout: int = 604800
@@ -359,45 +429,12 @@ class LiveGBSAPI:
         :param check_outputs: 是否检查通道在线人数，默认 false，表示停止前不检查通道是否有客户端正在播放
         :return: 停止直播响应对象
         """
-        # 准备请求数据
-        data = {"serial": serial, "check_outputs": check_outputs}
+        data: Dict[str, Any] = {"serial": serial, "check_outputs": check_outputs}
+        self._add_channel_param(data, channel, code)
 
-        # 添加可选参数
-        if channel is not None:
-            data["channel"] = channel
-        else:
-            data["channel"] = 1  # 默认值
-
-        if code is not None:
-            data["code"] = code
-
-        # 发送请求
         response = self._make_request("POST", "/api/v1/stream/stop", json=data)
-
-        # 特殊处理停止直播接口的响应，因为可能返回纯文本而不是JSON
-        try:
-            # 检查HTTP状态码
-            if response.status_code != 200:
-                raise LiveGBSAPIError(
-                    f"API请求失败，状态码: {response.status_code}",
-                    error_code=str(response.status_code),
-                    response_text=response.text,
-                )
-
-            # 尝试解析JSON响应
-            try:
-                response_data = response.json()
-            except json.JSONDecodeError:
-                # 如果不是JSON，使用响应文本作为消息
-                response_data = response.text
-
-            # 返回停止直播响应对象
-            return StreamStopResponse(response_data)
-
-        except LiveGBSError:
-            raise
-        except Exception as e:
-            raise LiveGBSError(f"处理响应时发生未知错误: {str(e)}", response_text=response.text)
+        response_data = self._handle_flexible_response(response, "停止直播")
+        return StreamStopResponse(response_data)
 
     def stream_osd(
         self,
@@ -424,8 +461,7 @@ class LiveGBSAPI:
         :param size: 字体大小
         :return: 视频水印响应对象
         """
-        # 准备请求数据
-        data = {
+        data: Dict[str, Any] = {
             "serial": serial,
             "code": code,
             "color": color,
@@ -444,63 +480,9 @@ class LiveGBSAPI:
         if size is not None:
             data["size"] = size
 
-        # 发送请求
         response = self._make_request("POST", "/api/v1/stream/osd", json=data)
-
-        # 特殊处理视频水印接口的响应，因为可能返回纯文本而不是JSON
-        try:
-            # 检查HTTP状态码
-            if response.status_code != 200:
-                raise LiveGBSAPIError(
-                    f"API请求失败，状态码: {response.status_code}",
-                    error_code=str(response.status_code),
-                    response_text=response.text,
-                )
-
-            # 尝试解析JSON响应
-            try:
-                response_data = response.json()
-            except json.JSONDecodeError:
-                # 如果不是JSON，使用响应文本作为消息
-                response_data = response.text
-
-            # 返回视频水印响应对象
-            return StreamOSDResponse(response_data)
-
-        except LiveGBSError:
-            raise
-        except Exception as e:
-            raise LiveGBSError(f"处理响应时发生未知错误: {str(e)}", response_text=response.text)
-
-    def _handle_control_response(self, response: requests.Response, operation_name: str) -> Any:
-        """
-        处理设备控制接口的通用响应
-        :param response: HTTP响应对象
-        :param operation_name: 操作名称，用于错误信息
-        :return: 响应数据
-        """
-        try:
-            # 检查HTTP状态码
-            if response.status_code != 200:
-                raise LiveGBSAPIError(
-                    f"{operation_name}失败，状态码: {response.status_code}",
-                    error_code=str(response.status_code),
-                    response_text=response.text,
-                )
-
-            # 尝试解析JSON响应
-            try:
-                response_data = response.json()
-            except json.JSONDecodeError:
-                # 如果不是JSON，使用响应文本作为消息
-                response_data = response.text
-
-            return response_data
-
-        except LiveGBSError:
-            raise
-        except Exception as e:
-            raise LiveGBSError(f"{operation_name}时发生未知错误: {str(e)}", response_text=response.text)
+        response_data = self._handle_flexible_response(response, "设置视频水印")
+        return StreamOSDResponse(response_data)
 
     def ptz_control(
         self,
@@ -519,7 +501,6 @@ class LiveGBSAPI:
         :param speed: 速度(0~255)，默认129
         :return: 云台控制响应对象
         """
-        # 验证控制指令
         valid_commands = [
             "left",
             "right",
@@ -536,27 +517,11 @@ class LiveGBSAPI:
         if command not in valid_commands:
             raise ValueError(f"无效的控制指令: {command}，允许的值: {', '.join(valid_commands)}")
 
-        # 准备请求数据
-        data = {
-            "serial": serial,
-            "command": command,
-            "speed": speed,
-        }
+        data: Dict[str, Any] = {"serial": serial, "command": command, "speed": speed}
+        self._add_channel_param(data, channel, code)
 
-        # 添加可选参数
-        if channel is not None:
-            data["channel"] = channel
-        else:
-            data["channel"] = 1  # 默认值
-
-        if code is not None:
-            data["code"] = code
-
-        # 发送请求
         response = self._make_request("POST", "/api/v1/control/ptz", json=data)
-        response_data = self._handle_control_response(response, "云台控制")
-
-        # 返回云台控制响应对象
+        response_data = self._handle_flexible_response(response, "云台控制")
         return PTZControlResponse(response_data)
 
     def fi_control(
@@ -576,32 +541,15 @@ class LiveGBSAPI:
         :param speed: 速度(0~255)，默认129
         :return: 焦点光圈控制响应对象
         """
-        # 验证控制指令
         valid_commands = ["focusnear", "focusfar", "irisin", "irisout", "stop"]
         if command not in valid_commands:
             raise ValueError(f"无效的控制指令: {command}，允许的值: {', '.join(valid_commands)}")
 
-        # 准备请求数据
-        data = {
-            "serial": serial,
-            "command": command,
-            "speed": speed,
-        }
+        data: Dict[str, Any] = {"serial": serial, "command": command, "speed": speed}
+        self._add_channel_param(data, channel, code)
 
-        # 添加可选参数
-        if channel is not None:
-            data["channel"] = channel
-        else:
-            data["channel"] = 1  # 默认值
-
-        if code is not None:
-            data["code"] = code
-
-        # 发送请求
         response = self._make_request("POST", "/api/v1/control/fi", json=data)
-        response_data = self._handle_control_response(response, "焦点光圈控制")
-
-        # 返回焦点光圈控制响应对象
+        response_data = self._handle_flexible_response(response, "焦点光圈控制")
         return FIControlResponse(response_data)
 
     def preset_control(
@@ -623,39 +571,20 @@ class LiveGBSAPI:
         :param name: 预置位名称，command=set 时有效
         :return: 预置位控制响应对象
         """
-        # 验证控制指令
         valid_commands = ["set", "goto", "remove"]
         if command not in valid_commands:
             raise ValueError(f"无效的控制指令: {command}，允许的值: {', '.join(valid_commands)}")
 
-        # 验证预置位编号
         if not (1 <= preset <= 255):
             raise ValueError(f"预置位编号必须在1-255之间，当前值: {preset}")
 
-        # 准备请求数据
-        data = {
-            "serial": serial,
-            "command": command,
-            "preset": preset,
-        }
-
-        # 添加可选参数
-        if channel is not None:
-            data["channel"] = channel
-        else:
-            data["channel"] = 1  # 默认值
-
-        if code is not None:
-            data["code"] = code
-
+        data: Dict[str, Any] = {"serial": serial, "command": command, "preset": preset}
+        self._add_channel_param(data, channel, code)
         if name is not None:
             data["name"] = name
 
-        # 发送请求
         response = self._make_request("POST", "/api/v1/control/preset", json=data)
-        response_data = self._handle_control_response(response, "预置位控制")
-
-        # 返回预置位控制响应对象
+        response_data = self._handle_flexible_response(response, "预置位控制")
         return PresetControlResponse(response_data)
 
     def home_position_control(
@@ -679,27 +608,15 @@ class LiveGBSAPI:
         :param timeout: 超时时间(秒)，默认15
         :return: 看守位控制响应对象
         """
-        # 准备请求数据
-        data = {
+        data: Dict[str, Any] = {
             "serial": serial,
             "resettime": resettime,
             "presetindex": presetindex,
             "enabled": enabled,
             "timeout": timeout,
         }
+        self._add_channel_param(data, channel, code)
 
-        # 添加可选参数
-        if channel is not None:
-            data["channel"] = channel
-        else:
-            data["channel"] = 1  # 默认值
-
-        if code is not None:
-            data["code"] = code
-
-        # 发送请求
         response = self._make_request("POST", "/api/v1/control/homeposition", json=data)
-        response_data = self._handle_control_response(response, "看守位控制")
-
-        # 返回看守位控制响应对象
+        response_data = self._handle_flexible_response(response, "看守位控制")
         return HomePositionControlResponse(response_data)

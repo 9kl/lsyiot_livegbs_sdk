@@ -35,7 +35,14 @@ from .responses import (
     PresetControlResponse,
     HomePositionControlResponse,
 )
-from .exceptions import LiveGBSError, LiveGBSNetworkError, LiveGBSAPIError, LiveGBSParseError
+from .exceptions import (
+    LiveGBSError,
+    LiveGBSNetworkError,
+    LiveGBSAPIError,
+    LiveGBSOfflineError,
+    LiveGBSNotFoundError,
+    LiveGBSParseError,
+)
 
 __version__ = "1.0.3"
 __author__ = "fhp"
@@ -58,5 +65,7 @@ __all__ = [
     "LiveGBSError",
     "LiveGBSNetworkError",
     "LiveGBSAPIError",
+    "LiveGBSOfflineError",
+    "LiveGBSNotFoundError",
     "LiveGBSParseError",
 ]
