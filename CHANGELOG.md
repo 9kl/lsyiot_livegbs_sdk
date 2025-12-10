@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [1.0.4] - 2025-12-10
+
+### Added
+- 新增 `LiveGBSOfflineError` 异常类，用于设备不在线状态检测
+  - 通过响应内容包含 "offline" 关键字自动识别
+- 新增 `LiveGBSNotFoundError` 异常类，用于设备未找到状态检测
+  - 通过响应内容包含 "not found" 关键字自动识别
+
+### Improved
+- 优化代码结构，提取公共方法减少代码重复
+  - 新增 `_handle_flexible_response` 方法处理 JSON 或纯文本响应
+  - 新增 `_add_channel_param` 方法统一处理通道参数
+- 私有方法移动到类头部，提高代码可读性
+
 ## [1.0.3] - 2025-12-09
 
 ### Improved
@@ -63,7 +77,8 @@
 - 类型提示支持
 - 响应对象封装
 
-[Unreleased]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/9kl/lsyiot_livegbs_sdk/compare/v1.0.0...v1.0.1
