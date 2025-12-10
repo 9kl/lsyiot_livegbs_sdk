@@ -2,7 +2,7 @@ from lsyiot_livegbs_sdk import LiveGBSAPI
 from lsyiot_livegbs_sdk.exceptions import LiveGBSAPIError, LiveGBSNotFoundError, LiveGBSOfflineError
 
 # 测试用设备信息
-TEST_SERIAL = "34020000001320000008"
+TEST_SERIAL = "34020000001320000014"
 TEST_CHANNEL = 1
 
 
@@ -11,7 +11,7 @@ def get_client() -> LiveGBSAPI:
     try:
         server_url = "http://127.0.0.1:10000"
         username = "admin"
-        password = "hsd123456"
+        password = "123456"
 
         client = LiveGBSAPI(server_url)
         login_result = client.login(username, password, url_token_only=True)
